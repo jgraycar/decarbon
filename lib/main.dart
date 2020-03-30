@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dcrbn3/database.dart';
 import 'package:dcrbn3/user.dart';
 import 'package:dcrbn3/plaid.dart';
+import 'package:dcrbn3/plaid2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -461,7 +462,7 @@ class RandomWordsState extends State<RandomWords> {
           return MaterialApp(
             initialRoute: PlaidLink.id,
             routes: {
-              PlaidLink.id: (context) => PlaidLink(),
+              PlaidLink.id: (context) => PlaidLink2(),
             },
           );
         },

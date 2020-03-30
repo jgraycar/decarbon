@@ -1,6 +1,3 @@
-/*
-import 'package:plaid/plaid.dart';
-*/
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -52,37 +49,3 @@ class _PlaidLinkState extends State<PlaidLink> {
     );
   }
 }
-
-/*
-class PlaidLink extends State {
-
-  showPlaidView() {
-    bool plaidSandbox = true;
-
-    Configuration configuration = Configuration(
-        plaidPublicKey: 'cc12481ba9e7bd47809561ea23b521',
-        plaidBaseUrl: 'https://cdn.plaid.com/link/v2/stable/link.html',
-        plaidEnvironment: plaidSandbox ? 'sandbox' : 'production',
-        environmentPlaidPathAccessToken:
-        'https://sandbox.plaid.com/item/public_token/exchange',
-        environmentPlaidPathStripeToken:
-        'https://sandbox.plaid.com/processor/stripe/bank_account_token/create',
-        plaidClientId: '5e37326608bbc300147b421c',
-        secret: plaidSandbox ? 'e426be468ca55de1286a829669872d' : '',
-        clientName: 'Decarbon',
-        webhook: 'Webhook Url',
-        products: 'auth,income',
-        selectAccount: 'false'
-    );
-
-    FlutterPlaidApi flutterPlaidApi = FlutterPlaidApi(configuration);
-    flutterPlaidApi.launch(context, (Result result) {
-      ///handle result
-    }, stripeToken: true);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container();
-  }
-}*/
