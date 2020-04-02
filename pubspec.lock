@@ -330,12 +330,12 @@ packages:
     source: hosted
     version: "2.0.8"
   webview_flutter:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: webview_flutter
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.3.19+7"
+    version: "0.3.19+9"
   xml:
     dependency: transitive
     description:

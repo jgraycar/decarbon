@@ -455,28 +455,31 @@ class RandomWordsState extends State<RandomWords> {
   final List<WordPair> _suggestions = <WordPair>[];
   final Set<WordPair> _saved = Set<WordPair>();
   final _biggerFont = const TextStyle(fontSize: 16.0);
-  void _pushSaved() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) {
-          return MaterialApp(
-            initialRoute: PlaidLink.id,
-            routes: {
-              PlaidLink.id: (context) => PlaidLink2(),
-            },
-          );
-        },
-      ),
-    );
-  }
+
   @override
+
   Widget build(BuildContext context) {
+
+    void _showAccountsPanel() {
+      showModalBottomSheet(context: context, builder: (context) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
+          child: AccountsPanel(),
+        );
+      },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        backgroundColor: Colors.white,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: Icon(Icons.search), onPressed: _pushSaved),
+        leading: IconButton(icon: Icon(Icons.search), onPressed: null),
         title: Text('Purchases'),
         actions: <Widget>[
-          IconButton(icon: Icon(Icons.account_balance), onPressed: _pushSaved),
+          IconButton(icon: Icon(Icons.account_balance), onPressed: _showAccountsPanel),
         ],
       ),
       body: _buildSuggestions(),
@@ -523,6 +526,47 @@ class RandomWords extends StatefulWidget {
   @override
   RandomWordsState createState() => RandomWordsState();
 }
+
+class AccountsPanel extends StatefulWidget {
+  @override
+  _AccountsPanelState createState() => _AccountsPanelState();
+}
+
+class _AccountsPanelState extends State<AccountsPanel> {
+
+  void _showPlaidLink() {
+    Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) {
+            return MaterialApp(
+              initialRoute: PlaidLink.id,
+              routes: {
+                PlaidLink.id: (context) => PlaidLink2(),
+              },
+            );
+          },
+        ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+          child: Text('Tap + to add an account.')
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.grey[50],
+        onPressed: _showPlaidLink,
+        child: const Icon(
+          Icons.add,
+          color: Colors.black,
+        ),
+      ),
+    );  }
+}
+
 
 // TheWorld
 
@@ -642,18 +686,6 @@ class UserProfileState extends State<UserProfile> {
                 onPressed: () => _showSettingsPanel(),
               ),
             ],
-        ),
-        endDrawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: const <Widget>[
-              SizedBox(height: 45.0),
-              ListTile(
-                leading: Icon(Icons.person),
-                title: Text('Log Out'),
-              ),
-            ],
-          ),
         ),
         body: BrewList(),
       ),
