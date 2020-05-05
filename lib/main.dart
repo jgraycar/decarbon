@@ -541,7 +541,7 @@ class _AccountsPanelState extends State<AccountsPanel> {
             return MaterialApp(
               initialRoute: PlaidLink.id,
               routes: {
-                PlaidLink.id: (context) => PlaidLink2(),
+                PlaidLink.id: (context) => PlaidLink(),
               },
             );
           },

@@ -1,7 +1,6 @@
 library plaid;
 
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart';
@@ -10,11 +9,20 @@ import 'package:webview_flutter/webview_flutter.dart';
 // Configuration
 
 class PlaidLink2 extends StatefulWidget {
+
   @override
   _PlaidLink2State createState() => _PlaidLink2State();
 }
 
 class _PlaidLink2State extends State<PlaidLink2> {
+
+  @override
+  initState() {
+    super.initState(
+    );
+    showPlaidView();
+  }
+
   showPlaidView() {
     bool plaidSandbox = true;
 
@@ -37,13 +45,14 @@ class _PlaidLink2State extends State<PlaidLink2> {
     FlutterPlaidApi flutterPlaidApi = FlutterPlaidApi(configuration);
     flutterPlaidApi.launch(context, (Result result) {
       ///handle result
-    }, stripeToken: true);
+    }, stripeToken: false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container();
   }
+
 }
 
 // Web view handling

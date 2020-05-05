@@ -39,6 +39,7 @@ class _PlaidLinkState extends State<PlaidLink> {
           navigationDelegate: (NavigationRequest navRequest) {
             debugPrint("NavigationRequest URL: ${navRequest.url}");
             if (navRequest.url.contains('plaidlink://')) {
+              // _parseUrl(navRequest.url);
               return NavigationDecision.prevent;
             }
             debugPrint(navRequest.url.toString());
@@ -47,5 +48,17 @@ class _PlaidLinkState extends State<PlaidLink> {
         ),
       ),
     );
+  }
+}
+
+_parseUrl(String url) {
+  if (url?.isNotEmpty != null) {
+    final Uri uri = Uri.parse(url);
+    debugPrint('PLAID uri: ' + uri.toString());
+    final Map<String, String> queryParams = uri.queryParameters;
+    final List<String> segments = uri.pathSegments;
+    debugPrint('queryParams: ' + queryParams?.toString());
+    debugPrint('segments: ' + segments?.toString());
+    // _processParams(queryParams, url);
   }
 }
