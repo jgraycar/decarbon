@@ -42,6 +42,7 @@ class _PlaidLinkState extends State<PlaidLink> {
               // _parseUrl(navRequest.url);
               return NavigationDecision.prevent;
             }
+
             debugPrint(navRequest.url.toString());
             return NavigationDecision.navigate;
           },

@@ -9,17 +9,14 @@ import 'package:webview_flutter/webview_flutter.dart';
 // Configuration
 
 class PlaidLink2 extends StatefulWidget {
-
   @override
   _PlaidLink2State createState() => _PlaidLink2State();
 }
 
 class _PlaidLink2State extends State<PlaidLink2> {
-
   @override
   initState() {
-    super.initState(
-    );
+    super.initState();
     showPlaidView();
   }
 
@@ -31,16 +28,15 @@ class _PlaidLink2State extends State<PlaidLink2> {
         plaidBaseUrl: 'https://cdn.plaid.com/link/v2/stable/link.html',
         plaidEnvironment: plaidSandbox ? 'sandbox' : 'production',
         environmentPlaidPathAccessToken:
-        'https://sandbox.plaid.com/item/public_token/exchange',
+            'https://sandbox.plaid.com/item/public_token/exchange',
         environmentPlaidPathStripeToken:
-        'https://sandbox.plaid.com/processor/stripe/bank_account_token/create',
+            'https://sandbox.plaid.com/processor/stripe/bank_account_token/create',
         plaidClientId: '5e37326608bbc300147b421c',
         secret: plaidSandbox ? 'e426be468ca55de1286a829669872d' : '',
         clientName: 'Decarbon',
         webhook: '', // add this later
         products: 'auth,transactions',
-        selectAccount: 'true'
-    );
+        selectAccount: 'true');
 
     FlutterPlaidApi flutterPlaidApi = FlutterPlaidApi(configuration);
     flutterPlaidApi.launch(context, (Result result) {
@@ -52,7 +48,6 @@ class _PlaidLink2State extends State<PlaidLink2> {
   Widget build(BuildContext context) {
     return Container();
   }
-
 }
 
 // Web view handling
@@ -92,13 +87,20 @@ class _WebViewPage {
     _url = config.plaidBaseUrl +
         '?key=' +
         config.plaidPublicKey +
-        '&clientName='+ config.clientName +
-        '&isWebview=' + config.isWebview +
-        '&product=' + config.products +
-        '&isMobile=' + config.isMobile +
-        '&apiVersion=' + config.apiVersion +
-        '&selectAccount=' + config.selectAccount +
-        '&webhook=' + config.webhook +
+        '&clientName=' +
+        config.clientName +
+        '&isWebview=' +
+        config.isWebview +
+        '&product=' +
+        config.products +
+        '&isMobile=' +
+        config.isMobile +
+        '&apiVersion=' +
+        config.apiVersion +
+        '&selectAccount=' +
+        config.selectAccount +
+        '&webhook=' +
+        config.webhook +
         '&env=' +
         config.plaidEnvironment;
     debugPrint('init plaid: ' + _url);
@@ -127,13 +129,13 @@ class _WebViewPage {
         _closeWebView();
       }
 
-      final dynamic token           = queryParams['public_token'];
-      final dynamic accountId       = queryParams['account_id'];
-      final String accountType      = queryParams['account_type'];
-      final String accountSubtype   = queryParams['account_subtype'];
-      final String accountName      = queryParams['account_name'];
-      final String institutionId    = queryParams['institution_id'];
-      final String institutionName  = queryParams['institution_name'];
+      final dynamic token = queryParams['public_token'];
+      final dynamic accountId = queryParams['account_id'];
+      final String accountType = queryParams['account_type'];
+      final String accountSubtype = queryParams['account_subtype'];
+      final String accountName = queryParams['account_name'];
+      final String institutionId = queryParams['institution_id'];
+      final String institutionName = queryParams['institution_name'];
 
       if (token != null && accountId != null) {
         if (!_stripeToken) {
@@ -145,8 +147,7 @@ class _WebViewPage {
               accountSubtype: accountSubtype,
               institutionId: institutionId,
               institutionName: institutionName,
-              response: queryParams
-          ));
+              response: queryParams));
         } else {
           await _fetchStripeToken(token, accountId);
         }
@@ -158,34 +159,32 @@ class _WebViewPage {
     final headers = {'Content-Type': 'application/json'};
 
     final Response responseAccessToken =
-    await post(_config.environmentPlaidPathAccessToken,
-        body: json.encode({
-          'public_token': token,
-          'client_id': _config.plaidClientId,
-          'secret': _config.secret
-        }),
-        headers: headers);
+        await post(_config.environmentPlaidPathAccessToken,
+            body: json.encode({
+              'public_token': token,
+              'client_id': _config.plaidClientId,
+              'secret': _config.secret
+            }),
+            headers: headers);
     final accessTokenData =
-    json.decode(utf8.decode(responseAccessToken.bodyBytes));
+        json.decode(utf8.decode(responseAccessToken.bodyBytes));
     final String accessToken = accessTokenData['access_token'];
 
     final Response responseStripeToken =
-    await post(_config.environmentPlaidPathStripeToken,
-        body: json.encode({
-          'client_id': _config.plaidClientId,
-          'secret': _config.secret,
-          'access_token': accessToken,
-          'account_id': accountId
-        }),
-        headers: headers);
+        await post(_config.environmentPlaidPathStripeToken,
+            body: json.encode({
+              'client_id': _config.plaidClientId,
+              'secret': _config.secret,
+              'access_token': accessToken,
+              'account_id': accountId
+            }),
+            headers: headers);
 
     final stripeTokenData =
-    json.decode(utf8.decode(responseStripeToken.bodyBytes));
+        json.decode(utf8.decode(responseStripeToken.bodyBytes));
     _success(Result(
-        token:
-        stripeTokenData['stripe_bank_account_token'],
-        response: stripeTokenData)
-    );
+        token: stripeTokenData['stripe_bank_account_token'],
+        response: stripeTokenData));
   }
 
   _closeWebView() {
@@ -211,23 +210,22 @@ class _WebViewPage {
 }
 
 class Configuration {
-  Configuration(
-      {
-        @required this.plaidPublicKey,
-        @required this.plaidBaseUrl,
-        @required this.plaidEnvironment,
-        @required this.environmentPlaidPathAccessToken,
-        @required this.environmentPlaidPathStripeToken,
-        @required this.plaidClientId,
-        @required this.secret,
-        @required this.clientName,
-        this.webhook        = 'https://requestb.in',
-        this.products       = 'auth',//e.g. auth or auth,income
-        this.selectAccount  = 'true',//e.g. auth or auth,income
-        this.isMobile       = 'true',
-        this.apiVersion     = 'v2',
-        this.isWebview      = 'true',
-      });
+  Configuration({
+    @required this.plaidPublicKey,
+    @required this.plaidBaseUrl,
+    @required this.plaidEnvironment,
+    @required this.environmentPlaidPathAccessToken,
+    @required this.environmentPlaidPathStripeToken,
+    @required this.plaidClientId,
+    @required this.secret,
+    @required this.clientName,
+    this.webhook = 'https://requestb.in',
+    this.products = 'auth', //e.g. auth or auth,income
+    this.selectAccount = 'true', //e.g. auth or auth,income
+    this.isMobile = 'true',
+    this.apiVersion = 'v2',
+    this.isWebview = 'true',
+  });
   String plaidPublicKey;
   String plaidBaseUrl;
   String plaidEnvironment;
