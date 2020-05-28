@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dcrbn3/database.dart';
-import 'package:dcrbn3/user.dart';
-// import 'package:dcrbn3/plaid.dart';
-// import 'package:dcrbn3/plaid2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -105,6 +103,7 @@ class Wrapper extends StatelessWidget {
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final DatabaseService _databaseService = DatabaseService();
 
   // create user obj based on FirebaseUser
   User _userFromFirebaseUser(FirebaseUser user) {
@@ -137,8 +136,8 @@ class AuthService {
       FirebaseUser user = result.user;
 
       // create a new userData document for the user with the uid
-      await DatabaseService(uid: user.uid)
-          .updateUserData('No name provided', 'Omnivore');
+      await _databaseService.updateUserData(
+          user.uid, 'No name provided', 'Omnivore');
       return _userFromFirebaseUser(user);
     } catch (e) {
       print(e.toString());
@@ -582,10 +581,11 @@ class _PlaidThreeState extends State<PlaidThree> {
       // oauthNonce: "",
       // userLegalName: "John Doe", //required for auth product
       // userEmailAddress: "johndoe@app.com", //required for auth product
+      // webhook: optional, receive notifications once a userʼs transactions have been processed and are ready for use. https://github.com/jorgefspereira/plaid_flutter/blob/master/lib/plaid_flutter.dart
       env: EnvOption.sandbox,
       products: <ProductOption>[ProductOption.transactions],
       accountSubtypes: {
-        "depository": ["checking", "savings"],
+        "depository": ["checking", "savings"], // only for auth product
       },
       onAccountLinked: (publicToken, metadata) {
         print("onAccountLinked: $publicToken metadata: $metadata");
@@ -693,6 +693,7 @@ class _MyHomePageState extends State<MyHomePage> {
 class UserProfileState extends State<UserProfile> {
   final AuthService _auth = AuthService();
   final GlobalKey _scaffoldKey = new GlobalKey();
+  final DatabaseService _databaseService = DatabaseService();
 
   @override
   Widget build(BuildContext context) {
@@ -713,7 +714,7 @@ class UserProfileState extends State<UserProfile> {
     }
 
     return StreamProvider<List<Brew>>.value(
-      value: DatabaseService().brews,
+      // value: DatabaseService().brews,
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
@@ -731,7 +732,29 @@ class UserProfileState extends State<UserProfile> {
             ),
           ],
         ),
-        body: BrewList(),
+        body: Center(
+          child: Container(
+            margin: EdgeInsets.fromLTRB(0, 40, 0, 0),
+            child: Column(
+              children: <Widget>[
+                Text('Joel',
+                    style:
+                        TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold)),
+                SizedBox(height: 20.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(Icons.restaurant),
+                    Container(
+                      margin: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                      child: Text('Vegetarian'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -742,44 +765,6 @@ class UserProfile extends StatefulWidget {
   UserProfileState createState() => UserProfileState();
 }
 
-class BrewList extends StatefulWidget {
-  @override
-  _BrewListState createState() => _BrewListState();
-}
-
-class _BrewListState extends State<BrewList> {
-  @override
-  Widget build(BuildContext context) {
-    final brews = Provider.of<List<Brew>>(context) ?? [];
-
-    return ListView.builder(
-      itemCount: brews.length,
-      itemBuilder: (context, index) {
-        return BrewTile(brew: brews[index]);
-      },
-    );
-  }
-}
-
-class BrewTile extends StatelessWidget {
-  final Brew brew;
-  BrewTile({this.brew});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(top: 8.0),
-      child: Card(
-        margin: EdgeInsets.fromLTRB(20.0, 6.0, 20.0, 0.0),
-        child: ListTile(
-          title: Text(brew.name),
-          subtitle: Text(brew.diet),
-        ),
-      ),
-    );
-  }
-}
-
 class SettingsForm extends StatefulWidget {
   @override
   _SettingsFormState createState() => _SettingsFormState();
@@ -788,6 +773,7 @@ class SettingsForm extends StatefulWidget {
 class _SettingsFormState extends State<SettingsForm> {
   final _formKey = GlobalKey<FormState>();
   final List<String> diet = ['Omnivore', 'Pescatarian', 'Vegetarian', 'Vegan'];
+  final DatabaseService _databaseService = DatabaseService();
 
   // form values
   String _currentName;
@@ -799,7 +785,8 @@ class _SettingsFormState extends State<SettingsForm> {
     final AuthService _auth = AuthService();
 
     return StreamBuilder<UserData>(
-        stream: DatabaseService(uid: user.uid).userProfileData,
+        stream: _databaseService.getUserProfileData(user.uid),
+        // .userProfileData, // does this flag single user?
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             UserData userData = snapshot.data;
@@ -836,7 +823,8 @@ class _SettingsFormState extends State<SettingsForm> {
                     ),
                     onPressed: () async {
                       if (_formKey.currentState.validate()) {
-                        await DatabaseService(uid: user.uid).updateUserData(
+                        await _databaseService.updateUserData(
+                          user.uid,
                           _currentName ?? userData.name,
                           _currentDiet ?? userData.diet,
                         );
@@ -861,4 +849,68 @@ class _SettingsFormState extends State<SettingsForm> {
           }
         });
   }
+}
+
+// DATA MODEL
+
+class User {
+  final String uid;
+
+  User({this.uid});
+}
+
+class UserData {
+  final String uid;
+  final String name;
+  final String diet;
+
+  UserData({this.uid, this.name, this.diet});
+}
+
+class DatabaseService {
+  // final String uid;
+  // DatabaseService({this.uid});
+
+  // collection reference userData
+  final CollectionReference userData = Firestore.instance.collection(
+      'userData'); // Need to add .where clause here? how to make uid dynamic?
+
+  // update single user's data
+  Future updateUserData(String uid, String name, String diet) async {
+    return await userData.document(uid).setData({
+      'name': name,
+      'diet': diet,
+    });
+  }
+
+  // userProfileData from snapshot - single user
+  // UserData _userProfileDataFromSnapshot(DocumentSnapshot snapshot) {
+  // return UserData(
+  // uid: uid,
+  // name: snapshot.data['name'],
+  /*diet: snapshot.data['diet'],
+    );
+  }*/
+
+  // get user doc stream
+  Stream<UserData> getUserProfileData(String uid) {
+    UserData _userProfileDataFromSnapshot(DocumentSnapshot snapshot) {
+      String name = snapshot.data['name'];
+      String diet = snapshot.data['diet'];
+      return UserData(
+        uid: uid,
+        name: name,
+        diet: diet,
+      );
+    }
+
+    return userData.document(uid).snapshots().map(_userProfileDataFromSnapshot);
+  }
+}
+
+class Brew {
+  final String name;
+  final String diet;
+
+  Brew({this.name, this.diet});
 }

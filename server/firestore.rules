@@ -5,8 +5,11 @@ service cloud.firestore {
     // Make sure the uid of the requesting user matches name of the user
     // document. The wildcard expression {userId} makes the userId variable
     // available in rules.
-    match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId;
+
+    // Should I change userId to uid? This didn't help show single user data
+    // https://firebase.google.com/docs/reference/rules/rules.firestore.Request#auth
+    match /userData/{uid} {
+      allow read, update, delete: if request.auth.uid == uid;
       allow create: if request.auth.uid != null;
     }
 
