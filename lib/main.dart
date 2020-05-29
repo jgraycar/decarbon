@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
                 borderSide: BorderSide(color: Colors.red, width: 1.0)),
             focusedErrorBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.red[200], width: 1.0)),
+            labelStyle: TextStyle(color: Colors.grey),
           ),
         ),
       ),
@@ -697,8 +699,10 @@ class UserProfileState extends State<UserProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<User>(context);
     void _showSettingsPanel() {
       showModalBottomSheet(
+        isScrollControlled: true,
         context: context,
         builder: (context) {
           return Container(
@@ -713,50 +717,73 @@ class UserProfileState extends State<UserProfile> {
       );
     }
 
-    return StreamProvider<List<Brew>>.value(
-      // value: DatabaseService().brews,
-      child: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          title: Text('Profile'),
-          leading: IconButton(
-            icon: Icon(Icons.exit_to_app),
-            onPressed: () async {
-              await _auth.signOut();
-            },
-          ),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () => _showSettingsPanel(),
-            ),
-          ],
-        ),
-        body: Center(
-          child: Container(
-            margin: EdgeInsets.fromLTRB(0, 40, 0, 0),
-            child: Column(
-              children: <Widget>[
-                Text('Joel',
-                    style:
-                        TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 20.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Icon(Icons.restaurant),
-                    Container(
-                      margin: EdgeInsets.fromLTRB(10, 0, 0, 0),
-                      child: Text('Vegetarian'),
+    return StreamBuilder<UserData>(
+        stream: _databaseService.getUserProfileData(user.uid),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            UserData userData = snapshot.data;
+            return Scaffold(
+              key: _scaffoldKey,
+              appBar: AppBar(
+                title: Text('Profile'),
+                leading: IconButton(
+                  icon: Icon(Icons.exit_to_app),
+                  onPressed: () async {
+                    await _auth.signOut();
+                  },
+                ),
+                actions: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.settings),
+                    onPressed: () => _showSettingsPanel(),
+                  ),
+                ],
+              ),
+              body: Center(
+                child: Container(
+                  margin: EdgeInsets.fromLTRB(0, 40, 0, 0),
+                  child: Column(
+                    children: <Widget>[
+                      Text(userData.name,
+                          style: TextStyle(
+                              fontSize: 24.0, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 20.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.restaurant),
+                          Container(
+                            margin: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                            child: Text(userData.diet),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          } else {
+            return Scaffold(
+                key: _scaffoldKey,
+                appBar: AppBar(
+                  title: Text('Profile'),
+                  leading: IconButton(
+                    icon: Icon(Icons.exit_to_app),
+                    onPressed: () async {
+                      await _auth.signOut();
+                    },
+                  ),
+                  actions: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.settings),
+                      onPressed: () => _showSettingsPanel(),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+                body: null);
+          }
+        });
   }
 }
 
@@ -786,7 +813,6 @@ class _SettingsFormState extends State<SettingsForm> {
 
     return StreamBuilder<UserData>(
         stream: _databaseService.getUserProfileData(user.uid),
-        // .userProfileData, // does this flag single user?
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             UserData userData = snapshot.data;
@@ -795,9 +821,11 @@ class _SettingsFormState extends State<SettingsForm> {
               key: _formKey,
               child: Column(
                 children: <Widget>[
-                  Text('Update your profile'),
-                  SizedBox(height: 20.0),
+                  Text('Update your profile',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 30.0),
                   TextFormField(
+                    decoration: const InputDecoration(labelText: 'Name *'),
                     initialValue: userData.name,
                     validator: (val) =>
                         val.isEmpty ? 'Please enter a name' : null,
@@ -806,6 +834,7 @@ class _SettingsFormState extends State<SettingsForm> {
                   SizedBox(height: 20.0),
                   // dropdown
                   DropdownButtonFormField(
+                    decoration: const InputDecoration(labelText: 'Diet'),
                     isDense: true,
                     value: _currentDiet ?? userData.diet,
                     items: diet.map((diet) {
