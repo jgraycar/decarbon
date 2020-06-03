@@ -14,6 +14,7 @@ import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:plaid_flutter/plaid_flutter.dart';
+import 'package:string_validator/string_validator.dart';
 
 void main() => runApp(MyApp());
 
@@ -139,7 +140,7 @@ class AuthService {
 
       // create a new userData document for the user with the uid
       await _databaseService.updateUserData(
-          user.uid, 'No name provided', 'Omnivore');
+          user.uid, 'No name provided', 'Omnivore', 0);
       return _userFromFirebaseUser(user);
     } catch (e) {
       print(e.toString());
@@ -758,6 +759,18 @@ class UserProfileState extends State<UserProfile> {
                           ),
                         ],
                       ),
+                      SizedBox(height: 20.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.wb_sunny),
+                          Container(
+                            margin: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                            child: Text(
+                                "${userData.renewables.toString()}% renewable"),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -805,6 +818,7 @@ class _SettingsFormState extends State<SettingsForm> {
   // form values
   String _currentName;
   String _currentDiet;
+  int _currentRenewables;
 
   @override
   Widget build(BuildContext context) {
@@ -821,7 +835,7 @@ class _SettingsFormState extends State<SettingsForm> {
               key: _formKey,
               child: Column(
                 children: <Widget>[
-                  Text('Update your profile',
+                  Text('Update Profile',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 30.0),
                   TextFormField(
@@ -844,6 +858,29 @@ class _SettingsFormState extends State<SettingsForm> {
                     onChanged: (val) => setState(() => _currentDiet = val),
                   ),
                   SizedBox(height: 20.0),
+                  Container(
+                    width: 125,
+                    child: TextFormField(
+                      decoration:
+                          const InputDecoration(labelText: 'Renewables'),
+                      keyboardType: TextInputType.number,
+                      initialValue: userData.renewables.toString(),
+                      validator: (val) {
+                        if (val.isEmpty) {
+                          return 'Enter an integar between 0 and 100';
+                        } else if (int.parse(val) > 100) {
+                          return 'Enter an integar between 0 and 100';
+                        } else if (int.parse(val) < 0) {
+                          return 'Enter an integar between 0 and 100';
+                        } else {
+                          return null;
+                        }
+                      },
+                      onChanged: (val) =>
+                          setState(() => _currentRenewables = int.parse(val)),
+                    ),
+                  ),
+                  SizedBox(height: 20.0),
                   RaisedButton(
                     color: Colors.black,
                     child: Text(
@@ -856,11 +893,13 @@ class _SettingsFormState extends State<SettingsForm> {
                           user.uid,
                           _currentName ?? userData.name,
                           _currentDiet ?? userData.diet,
+                          _currentRenewables ?? userData.renewables,
                         );
                         Navigator.pop(context);
                       }
                       print(_currentName);
                       print(_currentDiet);
+                      print(_currentRenewables);
                     },
                   ),
                   SizedBox(height: 20.0),
@@ -892,8 +931,9 @@ class UserData {
   final String uid;
   final String name;
   final String diet;
+  final int renewables;
 
-  UserData({this.uid, this.name, this.diet});
+  UserData({this.uid, this.name, this.diet, this.renewables});
 }
 
 class DatabaseService {
@@ -905,41 +945,29 @@ class DatabaseService {
       'userData'); // Need to add .where clause here? how to make uid dynamic?
 
   // update single user's data
-  Future updateUserData(String uid, String name, String diet) async {
+  Future updateUserData(
+      String uid, String name, String diet, int renewables) async {
     return await userData.document(uid).setData({
       'name': name,
       'diet': diet,
+      'renewables': renewables,
     });
   }
-
-  // userProfileData from snapshot - single user
-  // UserData _userProfileDataFromSnapshot(DocumentSnapshot snapshot) {
-  // return UserData(
-  // uid: uid,
-  // name: snapshot.data['name'],
-  /*diet: snapshot.data['diet'],
-    );
-  }*/
 
   // get user doc stream
   Stream<UserData> getUserProfileData(String uid) {
     UserData _userProfileDataFromSnapshot(DocumentSnapshot snapshot) {
       String name = snapshot.data['name'];
       String diet = snapshot.data['diet'];
+      int renewables = snapshot.data['renewables'];
       return UserData(
         uid: uid,
         name: name,
         diet: diet,
+        renewables: renewables,
       );
     }
 
     return userData.document(uid).snapshots().map(_userProfileDataFromSnapshot);
   }
-}
-
-class Brew {
-  final String name;
-  final String diet;
-
-  Brew({this.name, this.diet});
 }

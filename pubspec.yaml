@@ -31,6 +31,7 @@ dependencies:
   webview_flutter: ^0.3.19+9
   http: ^0.12.0+4
   plaid_flutter: ^0.2.4
+  string_validator: ^0.1.4
 
 dev_dependencies:
   flutter_test:
