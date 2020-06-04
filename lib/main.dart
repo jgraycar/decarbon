@@ -54,6 +54,14 @@ class MyApp extends StatelessWidget {
             elevation: 1,
           ),
 
+          // Button styling
+          buttonTheme: ButtonThemeData(
+            buttonColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: new BorderRadius.circular(25.0),
+            ),
+          ),
+
           // Form styling
           inputDecorationTheme: InputDecorationTheme(
             enabledBorder: OutlineInputBorder(
@@ -858,31 +866,41 @@ class _SettingsFormState extends State<SettingsForm> {
                     onChanged: (val) => setState(() => _currentDiet = val),
                   ),
                   SizedBox(height: 20.0),
-                  Container(
-                    width: 125,
-                    child: TextFormField(
-                      decoration:
-                          const InputDecoration(labelText: 'Renewables'),
-                      keyboardType: TextInputType.number,
-                      initialValue: userData.renewables.toString(),
-                      validator: (val) {
-                        if (val.isEmpty) {
-                          return 'Enter an integar between 0 and 100';
-                        } else if (int.parse(val) > 100) {
-                          return 'Enter an integar between 0 and 100';
-                        } else if (int.parse(val) < 0) {
-                          return 'Enter an integar between 0 and 100';
-                        } else {
-                          return null;
-                        }
-                      },
-                      onChanged: (val) =>
-                          setState(() => _currentRenewables = int.parse(val)),
-                    ),
+                  Stack(
+                    children: <Widget>[
+                      Container(
+                        width: 115,
+                        child: TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Renewables',
+                          ),
+                          keyboardType: TextInputType.number,
+                          initialValue: userData.renewables.toString(),
+                          validator: (val) {
+                            if (val.isEmpty) {
+                              return 'Enter an integar between 0 and 100';
+                            } else if (int.parse(val) > 100) {
+                              return 'Enter an integar between 0 and 100';
+                            } else if (int.parse(val) < 0) {
+                              return 'Enter an integar between 0 and 100';
+                            } else {
+                              return null;
+                            }
+                          },
+                          onChanged: (val) => setState(
+                              () => _currentRenewables = int.parse(val)),
+                        ),
+                      ),
+                      Container(
+                          width: 115,
+                          height: 50,
+                          padding: EdgeInsets.fromLTRB(0, 0, 15, 0),
+                          alignment: Alignment.centerRight,
+                          child: Text('%')),
+                    ],
                   ),
                   SizedBox(height: 20.0),
                   RaisedButton(
-                    color: Colors.black,
                     child: Text(
                       'Update',
                       style: TextStyle(color: Colors.white),
