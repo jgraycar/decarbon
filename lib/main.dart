@@ -666,7 +666,10 @@ class _MyHomePageState extends State<MyHomePage> {
       body: bodies[theriGroupVakue],
       appBar: AppBar(
         centerTitle: true,
-        title: Text("DECARBON"),
+        title: Image.asset(
+          'images/decarbon-logo.png',
+          width: 110,
+        ),
         bottom: PreferredSize(
           preferredSize: Size(double.infinity, 45.0),
           child: Padding(
