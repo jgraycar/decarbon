@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:plaid_flutter/plaid_flutter.dart';
 import 'package:string_validator/string_validator.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 void main() => runApp(MyApp());
 
@@ -579,11 +580,13 @@ class PlaidThree extends StatefulWidget {
 }
 
 class _PlaidThreeState extends State<PlaidThree> {
+  final DatabaseService _databaseService = DatabaseService();
   PlaidLink _plaidLink;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final user = Provider.of<User>(context);
 
     _plaidLink = PlaidLink(
       clientName: "Decarbon",
@@ -599,7 +602,9 @@ class _PlaidThreeState extends State<PlaidThree> {
         "depository": ["checking", "savings"], // only for auth product
       },
       onAccountLinked: (publicToken, metadata) {
-        print("onAccountLinked: $publicToken metadata: $metadata");
+        print(
+            "UID: ${user.uid} onAccountLinked: $publicToken metadata: $metadata");
+        _databaseService.saveItem(user.uid, metadata);
       },
       onAccountLinkError: (error, metadata) {
         print("onAccountError: $error metadata: $metadata");
@@ -972,6 +977,13 @@ class DatabaseService {
       'name': name,
       'diet': diet,
       'renewables': renewables,
+    });
+  }
+
+  // save account from Plaid Link
+  Future saveItem(String uid, dynamic metadata) async {
+    return await userData.document(uid).collection('items').document().setData({
+      'metadata': metadata,
     });
   }
 
