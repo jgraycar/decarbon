@@ -1,8 +1,4 @@
-const functions = require('firebase-functions');
-
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
+import * as functions from 'firebase-functions';
 
 // The Cloud Functions for Firebase SDK to create Cloud Functions and setup triggers.
 const functions = require('firebase-functions');
@@ -11,15 +7,23 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-// Take the text parameter passed to this HTTP endpoint and insert it into
-// Cloud Firestore under the path /messages/:documentId/original
+export const helloWorld = functions.https.onRequest((request, response) => {
+  console.log('Kyle says hello :D')
+  response.send("Hello from Decarbon!");
+});
+
+
+// add item from Plaid Link into Firestore by getting Access Token from Plaid first
+
 exports.addItem = functions.https.onRequest(async (req, res) => {
 
   // Grab the Plaid public token.
   const publicToken = req.body;
 
   // Push the public token into Plaid.
-  const plaidPost = https.onCall 
+  const plaidPost = functions.https.onCall((data, context) => {
+    // Do something
+  });
 
   // Receive the access token from Plaid (along with metadata?).
   const plaidResponse = ...
