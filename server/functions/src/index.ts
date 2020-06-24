@@ -1,18 +1,15 @@
 import * as functions from 'firebase-functions';
 
-// The Cloud Functions for Firebase SDK to create Cloud Functions and setup triggers.
-const functions = require('firebase-functions');
-
 // The Firebase Admin SDK to access Cloud Firestore.
-const admin = require('firebase-admin');
-admin.initializeApp();
+// const admin = require('firebase-admin');
+// admin.initializeApp();
 
 export const helloWorld = functions.https.onRequest((request, response) => {
   console.log('Kyle says hello :D')
-  response.send("Hello from Decarbon!");
+  response.send("Hello from Decarbon!!!");
 });
 
-
+/*
 // add item from Plaid Link into Firestore by getting Access Token from Plaid first
 
 exports.addItem = functions.https.onRequest(async (req, res) => {
@@ -34,3 +31,4 @@ exports.addItem = functions.https.onRequest(async (req, res) => {
   // Send back a message that we've succesfully added the Item
   res.json({result: `Item with ID: $IID added.`});
 });
+*/
