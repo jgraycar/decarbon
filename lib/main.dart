@@ -587,6 +587,9 @@ class _PlaidThreeState extends State<PlaidThree> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final user = Provider.of<User>(context);
+    final HttpsCallable callable = CloudFunctions.instance
+        .getHttpsCallable(functionName: 'addItem')
+          ..timeout = const Duration(seconds: 30);
 
     _plaidLink = PlaidLink(
       clientName: "Decarbon",
@@ -601,10 +604,26 @@ class _PlaidThreeState extends State<PlaidThree> {
       accountSubtypes: {
         "depository": ["checking", "savings"], // only for auth product
       },
-      onAccountLinked: (publicToken, metadata) {
+      onAccountLinked: (publicToken, metadata) async {
         print(
             "UID: ${user.uid} onAccountLinked: $publicToken metadata: $metadata");
         _databaseService.saveItem(user.uid, metadata);
+        try {
+          final HttpsCallableResult result = await callable.call(
+            <String, dynamic>{
+              'public_token': publicToken,
+            },
+          );
+          print(result.data); // does this include access_token?
+        } on CloudFunctionsException catch (e) {
+          print('caught firebase functions exception');
+          print(e.code);
+          print(e.message);
+          print(e.details);
+        } catch (e) {
+          print('caught firebase functions generic exception');
+          print(e);
+        }
       },
       onAccountLinkError: (error, metadata) {
         print("onAccountError: $error metadata: $metadata");
