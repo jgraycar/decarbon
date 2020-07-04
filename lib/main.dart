@@ -607,11 +607,12 @@ class _PlaidThreeState extends State<PlaidThree> {
       onAccountLinked: (publicToken, metadata) async {
         print(
             "UID: ${user.uid} onAccountLinked: $publicToken metadata: $metadata");
-        _databaseService.saveItem(user.uid, metadata);
+        // _databaseService.saveItem(user.uid, metadata); Save metadata to firestore - deprecated
         try {
           final HttpsCallableResult result = await callable.call(
             <String, dynamic>{
               'public_token': publicToken,
+              'user_id': user.uid,
             },
           );
           print(result.data); // does this include access_token?
@@ -1000,11 +1001,11 @@ class DatabaseService {
   }
 
   // save account from Plaid Link
-  Future saveItem(String uid, dynamic metadata) async {
+/*  Future saveItem(String uid, dynamic metadata) async {
     return await userData.document(uid).collection('items').document().setData({
       'metadata': metadata,
     });
-  }
+  }*/
 
   // get user doc stream
   Stream<UserData> getUserProfileData(String uid) {
