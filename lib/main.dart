@@ -601,13 +601,12 @@ class _PlaidThreeState extends State<PlaidThree> {
       // webhook: optional, receive notifications once a userʼs transactions have been processed and are ready for use. https://github.com/jorgefspereira/plaid_flutter/blob/master/lib/plaid_flutter.dart
       env: EnvOption.sandbox,
       products: <ProductOption>[ProductOption.transactions],
-      accountSubtypes: {
-        "depository": ["checking", "savings"], // only for auth product
-      },
+      /*accountSubtypes: {
+        "depository": ["checking", "credit card"], // only for auth product
+      },*/
       onAccountLinked: (publicToken, metadata) async {
         print(
             "UID: ${user.uid} onAccountLinked: $publicToken metadata: $metadata");
-        // _databaseService.saveItem(user.uid, metadata); Save metadata to firestore - deprecated
         try {
           final HttpsCallableResult result = await callable.call(
             <String, dynamic>{
@@ -999,13 +998,6 @@ class DatabaseService {
       'renewables': renewables,
     });
   }
-
-  // save account from Plaid Link
-/*  Future saveItem(String uid, dynamic metadata) async {
-    return await userData.document(uid).collection('items').document().setData({
-      'metadata': metadata,
-    });
-  }*/
 
   // get user doc stream
   Stream<UserData> getUserProfileData(String uid) {

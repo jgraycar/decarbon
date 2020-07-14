@@ -1,67 +1,100 @@
 import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+admin.initializeApp();
+
 import * as plaid from 'plaid';
 
-// The Firebase Admin SDK to access Cloud Firestore.
-const admin = require('firebase-admin');
-admin.initializeApp();
+const plaidClient = new plaid.Client(
+  process.env.PLAID_CLIENT_ID = `5e37326608bbc300147b421c`,
+  process.env.PLAID_SECRET = `e426be468ca55de1286a829669872d`,
+  process.env.PUBLIC_KEY = `cc12481ba9e7bd47809561ea23b521`,
+  plaid.environments.sandbox,
+  {version: '2019-05-29'} // '2019-05-29' | '2018-05-22' | '2017-03-08'
+);
+
+const SUPPORTED_ACCOUNT_TYPES = ["checking", "credit card"]
 
 // add item from Plaid Link into Firestore by exchanging public_token with Plaid API
 export const addItem = functions.https.onRequest(async (req, res) => {
 
-  const plaidClient = new plaid.Client(
-    process.env.PLAID_CLIENT_ID = `5e37326608bbc300147b421c`,
-    process.env.PLAID_SECRET = `e426be468ca55de1286a829669872d`,
-    process.env.PUBLIC_KEY = `cc12481ba9e7bd47809561ea23b521`,
-    plaid.environments.sandbox,
-    {version: '2019-05-29'} // '2019-05-29' | '2018-05-22' | '2017-03-08'
-  );
-
   functions.logger.log("Req:", req.body);
-  const public_token = req.body.data.public_token;
-  const user_uid = req.body.data.user_uid;
+  const publicToken = req.body.data.public_token;
+  const userId = req.body.data.user_id;
+  functions.logger.log("User ID:", userId);
 
-
-  plaidClient.exchangePublicToken(public_token).then(exchangeTokenRes => {
+  plaidClient.exchangePublicToken(publicToken).then(exchangeTokenRes => {
     const accessToken = exchangeTokenRes.access_token;
     functions.logger.log("Exchange Token Res:", exchangeTokenRes);
 
     return plaidClient.getAccounts(accessToken).then(getAccountsRes => {
-      return {
-        accessToken,
-        getAccountsRes,
-      };
+      return plaidClient.getInstitutionById(getAccountsRes.item.institution_id).then(getInstitutionRes => {
+        return {
+          accessToken,
+          getAccountsRes,
+          getInstitutionRes,
+        };
+      });
     });
-  }).then(getAccountsAndAccessTokenRes => {
-    functions.logger.log("Get Accounts and Access Token Res:", getAccountsAndAccessTokenRes);
-    const accessToken = getAccountsAndAccessTokenRes.accessToken;
-    const getAccountsRes = getAccountsAndAccessTokenRes.getAccountsRes;
-    functions.logger.log(accessToken);
-    functions.logger.log(getAccountsRes.item.item_id);
-    functions.logger.log(getAccountsRes.accounts); 
+  }).then(getItemDetailsRes => {
+    functions.logger.log("Get Item Details Res:", getItemDetailsRes);
+    const accessToken = getItemDetailsRes.accessToken;
+    const getAccountsRes = getItemDetailsRes.getAccountsRes;
+    const getInstitutionRes = getItemDetailsRes.getInstitutionRes;
+    
+    functions.logger.log("User ID:", userId);
+    functions.logger.log("Access Token:", accessToken);
+    functions.logger.log("Item:", getAccountsRes.item);
+    functions.logger.log("Institution:", getInstitutionRes.institution)
+    functions.logger.log("Accounts:", getAccountsRes.accounts);
+    
+    // Add item to user doc in Firestore
 
-    // Add item, access token, accounts to user doc in Firestore
-    admin.firestore().collection('userData').document(user_uid).collection('items').document(getAccountsRes.item.item_id).set({
-      access_token: accessToken,
-      // accounts: getAccountsRes.accounts,
+    // Add accounts
+    getAccountsRes.accounts.forEach(function (accountElement) {
+      if (!SUPPORTED_ACCOUNT_TYPES.includes(accountElement.subtype || '')) {
+        functions.logger.log("Account was not added to Firestore:", accountElement.name);
+        return;
+      }
+
+      admin.firestore().collection('userData').doc(userId).collection('items').doc(getAccountsRes.item.item_id).collection('accounts').doc(accountElement.account_id).set({
+        mask: accountElement.mask,
+        name: accountElement.name,
+        official_name: accountElement.official_name,
+        subtype: accountElement.subtype,
+        type: accountElement.type,
+      }).catch(() => {
+        functions.logger.log('Error adding account to Firestore');
+      });
+
+      functions.logger.log("Account added to Firestore:", accountElement.name);
     });
-    functions.logger.log("Added item, access token, accounts to user doc in Firestore"); 
+
+    // Add access token and institution ID
+    return admin.firestore().collection('userData').doc(userId).collection('items').doc(getAccountsRes.item.item_id).set({
+      access_token: accessToken,
+      institution_id: getAccountsRes.item.institution_id,
+      institution_name: getInstitutionRes.institution.name,
+      country_codes: getInstitutionRes.institution.country_codes,
+    });
+  }).then(() => {
+    functions.logger.log("Added Plaid item to user doc in Firestore!");
 
   }).catch(err => {
-    // Indicates a network or runtime error.
-    if (!(err instanceof plaid.PlaidError)) {
-      res.sendStatus(500);
-      return;
-    }
-
-    // Indicates plaid API error
-    functions.logger.log('/exchange token returned an error', {
-      error_type: err.error_type,
-      error_code: res.statusCode,
-      error_message: err.error_message,
-      display_message: err.display_message,
-/*       request_id: err.request_id,
-      status_code: err.status_code, */
+    if (err instanceof plaid.PlaidError) {
+      // Indicates plaid API error
+      functions.logger.error('Plaid error', {
+        error_type: err.error_type,
+        error_code: res.statusCode,
+        error_message: err.error_message,
+        display_message: err.display_message,
+        // request_id: err.request_id,
+        // status_code: err.status_code,
     });
+    } else {
+      functions.logger.error("Unidentified error:", err);
+    }
+    res.sendStatus(500);
+    return;
 
 /*     // Retreive transactions for last 90 days
     const now = moment();
