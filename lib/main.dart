@@ -453,7 +453,7 @@ class _HomeState extends State<Home> {
   }
 }
 
-//RandomWords
+// Transactions Tab
 
 class RandomWordsState extends State<RandomWords> {
   final List<WordPair> _suggestions = <WordPair>[];
@@ -540,6 +540,8 @@ class AccountsPanel extends StatefulWidget {
 }
 
 class _AccountsPanelState extends State<AccountsPanel> {
+  final DatabaseService _databaseService = DatabaseService();
+
   void _showPlaidLink() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -557,19 +559,55 @@ class _AccountsPanelState extends State<AccountsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(child: Text('Tap + to add an account.')),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.grey[50],
-        onPressed: _showPlaidLink,
-        child: const Icon(
-          Icons.add,
-          color: Colors.black,
-        ),
-      ),
-    );
+    final user = Provider.of<User>(context);
+
+    return StreamBuilder<QuerySnapshot>(
+        stream: _databaseService.userData
+            .document(user.uid)
+            .collection("items")
+            .snapshots(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.hasError) {
+            return Scaffold(
+              backgroundColor: Colors.white,
+              body: Center(child: Text('Error: ${snapshot.error}')),
+              floatingActionButton: FloatingActionButton(
+                backgroundColor: Colors.grey[50],
+                onPressed: _showPlaidLink,
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.black,
+                ),
+              ),
+            );
+          }
+          switch (snapshot.connectionState) {
+            case ConnectionState.waiting:
+              return Loading();
+            default:
+              final itemData = snapshot.data;
+              return Scaffold(
+                backgroundColor: Colors.white,
+                body: accountsList(itemData),
+                floatingActionButton: FloatingActionButton(
+                  backgroundColor: Colors.grey[50],
+                  onPressed: _showPlaidLink,
+                  child: const Icon(
+                    Icons.add,
+                    color: Colors.black,
+                  ),
+                ),
+              );
+          }
+        });
   }
+}
+
+accountsList(itemData) {
+  final DatabaseService _databaseService = DatabaseService();
+
+  if (itemData == null) return Center(child: Text('Tap + to add an account.'));
+  return new ListView(children: _databaseService.getItems(itemData));
 }
 
 class PlaidThree extends StatefulWidget {
@@ -651,7 +689,7 @@ class _PlaidThreeState extends State<PlaidThree> {
   }
 }
 
-// TheWorld
+// TheWorld Section
 
 class MyHomePage extends StatefulWidget {
   final String title;
@@ -726,7 +764,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-// UserProfile
+// Profile Section
+
+class UserProfile extends StatefulWidget {
+  @override
+  UserProfileState createState() => UserProfileState();
+}
 
 class UserProfileState extends State<UserProfile> {
   final AuthService _auth = AuthService();
@@ -833,11 +876,6 @@ class UserProfileState extends State<UserProfile> {
           }
         });
   }
-}
-
-class UserProfile extends StatefulWidget {
-  @override
-  UserProfileState createState() => UserProfileState();
 }
 
 class SettingsForm extends StatefulWidget {
@@ -981,13 +1019,19 @@ class UserData {
   UserData({this.uid, this.name, this.diet, this.renewables});
 }
 
+class ItemData {
+  final String itemId;
+
+  ItemData({this.itemId});
+}
+
 class DatabaseService {
   // final String uid;
   // DatabaseService({this.uid});
 
   // collection reference userData
-  final CollectionReference userData = Firestore.instance.collection(
-      'userData'); // Need to add .where clause here? how to make uid dynamic?
+  final CollectionReference userData =
+      Firestore.instance.collection('userData');
 
   // update single user's data
   Future updateUserData(
@@ -1014,5 +1058,29 @@ class DatabaseService {
     }
 
     return userData.document(uid).snapshots().map(_userProfileDataFromSnapshot);
+  }
+
+  // get items stream
+/*  Stream<ItemData> getUserItems(String uid) {
+    ItemData _userItemsFromSnapshot(CollectionReference snapshot) {
+      String itemId = snapshot.data['item_id'];
+      return ItemData(
+        itemId: itemId,
+      );
+    }
+
+    return userData
+        .document(uid)
+        .collection(items)
+        .snapshots()
+        .map(_userItemsFromSnapshot);
+  }*/
+
+  getItems(QuerySnapshot snapshot) {
+    return snapshot.documents
+        .map((item) => new ListTile(
+            title: new Text(item.data["institution_name"].toString()),
+            subtitle: new Text(item.data.toString())))
+        .toList();
   }
 }
