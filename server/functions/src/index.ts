@@ -5,11 +5,11 @@ admin.initializeApp();
 import * as plaid from 'plaid';
 
 const plaidClient = new plaid.Client(
-  process.env.PLAID_CLIENT_ID = `5e37326608bbc300147b421c`,
-  process.env.PLAID_SECRET = `e426be468ca55de1286a829669872d`,
-  process.env.PUBLIC_KEY = `cc12481ba9e7bd47809561ea23b521`,
+  functions.config().plaid.client_id,
+  functions.config().plaid.secret,
+  functions.config().plaid.public_key,
   plaid.environments.sandbox,
-  {version: '2019-05-29'} // '2019-05-29' | '2018-05-22' | '2017-03-08'
+  {version: '2019-05-29'}, // '2019-05-29' | '2018-05-22' | '2017-03-08'
 );
 
 const SUPPORTED_ACCOUNT_TYPES = ["checking", "credit card"]
@@ -22,24 +22,22 @@ export const addItem = functions.https.onRequest(async (req, res) => {
   const userId = req.body.data.user_id;
   functions.logger.log("User ID:", userId);
 
-  plaidClient.exchangePublicToken(publicToken).then(exchangeTokenRes => {
+  plaidClient.exchangePublicToken(publicToken).then(async (exchangeTokenRes: plaid.TokenResponse) => {
     const accessToken = exchangeTokenRes.access_token;
     functions.logger.log("Exchange Token Res:", exchangeTokenRes);
 
-    return plaidClient.getAccounts(accessToken).then(getAccountsRes => {
-      return plaidClient.getInstitutionById(getAccountsRes.item.institution_id).then(getInstitutionRes => {
-        return {
-          accessToken,
-          getAccountsRes,
-          getInstitutionRes,
-        };
-      });
-    });
+    const getAccountsRes = await plaidClient.getAccounts(accessToken);
+    const getInstitutionRes = await plaidClient.getInstitutionById(getAccountsRes.item.institution_id);
+    return {
+      accessToken,
+      getAccountsRes,
+      getInstitutionRes,
+    };
   }).then(getItemDetailsRes => {
     functions.logger.log("Get Item Details Res:", getItemDetailsRes);
     const accessToken = getItemDetailsRes.accessToken;
-    const getAccountsRes = getItemDetailsRes.getAccountsRes;
-    const getInstitutionRes = getItemDetailsRes.getInstitutionRes;
+    const getAccountsRes: plaid.AccountsResponse = getItemDetailsRes.getAccountsRes;
+    const getInstitutionRes: plaid.GetInstitutionByIdResponse<plaid.Institution> = getItemDetailsRes.getInstitutionRes;
     
     functions.logger.log("User ID:", userId);
     functions.logger.log("Access Token:", accessToken);
@@ -50,7 +48,7 @@ export const addItem = functions.https.onRequest(async (req, res) => {
     // Add item to user doc in Firestore
 
     // Add accounts
-    getAccountsRes.accounts.forEach(function (accountElement) {
+    getAccountsRes.accounts.forEach((accountElement: plaid.Account) => {
       if (!SUPPORTED_ACCOUNT_TYPES.includes(accountElement.subtype || '')) {
         functions.logger.log("Account was not added to Firestore:", accountElement.name);
         return;
@@ -89,7 +87,7 @@ export const addItem = functions.https.onRequest(async (req, res) => {
         display_message: err.display_message,
         // request_id: err.request_id,
         // status_code: err.status_code,
-    });
+      });
     } else {
       functions.logger.error("Unidentified error:", err);
     }
